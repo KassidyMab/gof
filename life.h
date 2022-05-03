@@ -27,7 +27,7 @@ enum placement {RANDOM = 49, DEFINED};
 
 
 unsigned char **init_matrix(int width, int height);
-void **del_arr(unsigned char **a, int width);
+void del_arr(unsigned char **a, int width);
 unsigned char **arr_cpy(unsigned char **a, unsigned char **b, int width, int height);
 int genupdate(unsigned char  **a, int x, int y, int friends);
 void **print_array(unsigned char  **arr, int width, int height);

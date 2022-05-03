@@ -37,17 +37,16 @@ int main(int argc, char *argv[])
 	int placement = RANDOM;
 	FILE *fp = NULL;
 	int xstart, ystart;
-
+	
 	if(argc == 1){
 		printf("usage: find [-n -l -a -w] -f filename -p pattern\n");
 		exit(EXIT_FAILURE);
 	}
 
-	while((c = getopt(argc, argv, ":h:w:r:g:b:e:f:s:o:")) != -1)
+	while((c = getopt(argc, argv, ":h:w:r:g:b:e:f:s:o:H")) != -1)
 		switch(c) {
 		case 'w':
 			sscanf(optarg, "%d", &width);
-			width /= sprite_size;
  			break;
 		case 'h':
 			sscanf(optarg, "%d", &height);
@@ -87,29 +86,40 @@ int main(int argc, char *argv[])
 			sscanf(optarg, "%d,%d", &xstart, &ystart);
 			break;
 		case 'H':
+			printf("Help\n-----\n");
+			printf("-w (int) modifies the width.\n");
+			printf("-h (int) modifies the height\n");
+			printf("-e (char) changes the game type t(torus)");
+			printf(", h(hedge), k(klien)\n");
+			printf("-f (file PW) sets a file to read out\n");
+			printf("-s (int) modifies the sprite size\n");
+			printf("-o (x,y) changes origin of the sprite placement\n");
+			printf("-r (int) changes the red rgb value\n");
+			printf("-b changes the blue rgb value\n");
+			printf("-g changes the green rgb value\n");
+			printf("-H prints out the different inputs and what");
+			printf("they do\n");
+			printf("-----\n");
+			exit(0);
 			break;
 		default:
-			
-			printf("usage: find -n -l -a -w -f filename pattern\n");
+			printf("-H for help\n");
+			printf("usage: find -w -h -e -f -s -o -r -b -g\n");
 			break;
 				
 		}
 	
         /* set up SDL -- works with SDL2 */
-
-	if (placement != DEFINED){
-		xstart = (int)(width/sprite_size);
-		ystart = (int)(height/sprite_size);
-	}
 	init_sdl_info(&sdl_info, width, height, sprite_size, red, green, blue);
 	/* your life initialization code here */
 	int swidth = width/sprite_size;
 	int sheight = height/sprite_size;
 	unsigned char  **board = init_matrix(swidth, sheight);
 	unsigned char  **misc = init_matrix(swidth, sheight);
+	unsigned char **tswap;
 	if (placement != DEFINED){
-		xstart = (int)(swidth/sprite_size);
-		ystart = (int)(sheight/sprite_size);
+		xstart = (int)(swidth/2);
+		ystart = (int)(sheight/2);
 	}
 	if (fp != NULL){
 		board = board_write(board, xstart, ystart, fp);
@@ -128,7 +138,9 @@ int main(int argc, char *argv[])
 	{
 		sdl_render_life(&sdl_info, board);
 		/* your game of life code goes here  */	
-		if (SDL_GetTicks() % 600 == 0){	
+		if (SDL_GetTicks() % 600 == 0){
+			printf("%p %p\n", board, misc);
+			tswap = board;
 			if(gtype == HEDGE){
 				board = hedgelife(board, misc, swidth, sheight);
 			} else if (gtype == TORUS) {
@@ -136,7 +148,9 @@ int main(int argc, char *argv[])
 			} else if (gtype == KLIEN){
 				board = klien_life(board, misc, swidth, sheight);
 			}
+			misc = tswap;
 		}
+		
 
 		/* change the  modulus value to slow the rendering */
 		// if (SDL_GetTicks() % 1 == 0)
@@ -153,18 +167,16 @@ int main(int argc, char *argv[])
 			case SDL_KEYUP:
                         /* If escape is pressed, return (and thus, quit) */
 				if (event.key.keysym.sym == SDLK_ESCAPE){
-					goto quit;
+					del_arr(board, swidth);
 					return 0;
 				}
 				break;
 			case SDL_QUIT:
-				goto quit;
+				del_arr(board, swidth);
 				return(0);
 			}
 		}
 	}
-	quit:
-	free(board);
 
 	return 0;
 }

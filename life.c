@@ -58,15 +58,16 @@ unsigned char **init_matrix(int width, int height)
 /**
  * deletes a given array.
  * @param a the array to delete
- * @param width the width of the array
+ * @param height the height of the array
  */
-void **del_arr(unsigned char  **a, int width)
+void del_arr(unsigned char  **a, int width)
 {
         for(int i = 0; i < width; i++){
                 free(a[i]);
         }
         free(a);
 }
+
 
 
 /**
@@ -77,7 +78,7 @@ void **del_arr(unsigned char  **a, int width)
  * @param height the height of array b.
  * @return the newly copied array b.
  */
-unsigned char  **arr_cpy(unsigned char  **a, unsigned char  **b, int width, int height)
+unsigned char **arr_cpy(unsigned char  **a, unsigned char  **b, int width, int height)
 {
         for(int i = 0; i < width; i++){
                 for(int j = 0; j < height; j++){
@@ -130,7 +131,6 @@ int genupdate(unsigned char  **a, int x, int y, int friends)
 }
 
 
-
 /**
  * Creates a random life pattern.
  * @param arr the board provided.
@@ -138,7 +138,7 @@ int genupdate(unsigned char  **a, int x, int y, int friends)
  * @param height the height of the board.
  * @return The board with randomly placed life.
  */
-unsigned char  **randboard(unsigned char  **arr, int width, int height)
+unsigned char **randboard(unsigned char  **arr, int width, int height)
 {
         for(int i = 0; i < width; i++){
                 for (int j = 0; j < height; j++){
@@ -151,7 +151,6 @@ unsigned char  **randboard(unsigned char  **arr, int width, int height)
 }
 
 
-
 /**
  * Runs the game of life using the hedge boundary rules
  * @param arr the array the game is played on
@@ -160,7 +159,7 @@ unsigned char  **randboard(unsigned char  **arr, int width, int height)
  * @param height the height of the array
  * @return the updated array.
  */
-unsigned char  **hedgelife(unsigned char  **arr, unsigned char  **temp, int width, int height)
+unsigned char **hedgelife(unsigned char  **arr, unsigned char  **temp, int width, int height)
 {
         int friends;
         for(int x = 1; x < width - 1; x++){
@@ -175,6 +174,7 @@ unsigned char  **hedgelife(unsigned char  **arr, unsigned char  **temp, int widt
 
         return temp;
 }
+
 
 /**
  * Looks for what neighbors are alive or dead under hedge rules.
@@ -198,11 +198,11 @@ int hedge_neighbor(unsigned char  **arr, int x, int y)
 }
 
 /**
- * Runs the game of life using the torus boundary rules
- * @param arr the array the game is played on
- * @param temp a secondary array where the changes are applied
- * @param width the width of the array
- * @param height the height of the array
+ * Runs the game of life using the torus boundary rules.
+ * @param arr the array the game is played on.
+ * @param temp a secondary array where the changes are applied.
+ * @param width the width of the array.
+ * @param height the height of the array.
  * @return the updated array.
  */
 unsigned char **toruslife(unsigned char  **arr, unsigned char  **temp, int width, int height)
@@ -281,11 +281,11 @@ int tsbound(int val, int max)
 
 
 /**
- * Runs the game of life using the klien boundary rules
- * @param arr the array the game is played on
- * @param temp a secondary array where the changes are applied
- * @param width the width of the array
- * @param height the height of the array
+ * Runs the game of life using the klien boundary rules.
+ * @param arr the array the game is played on.
+ * @param temp a secondary array where the changes are applied.
+ * @param width the width of the array.
+ * @param height the height of the array.
  * @return the updated array.
  */
 unsigned char **klien_life(unsigned char  **arr, unsigned char  **temp, int width, int height)
@@ -298,9 +298,6 @@ unsigned char **klien_life(unsigned char  **arr, unsigned char  **temp, int widt
                         temp[x][y] = genupdate(arr, x, y, friends);
                 }
         }
-        
-
-
         return temp;
 }
 
@@ -413,14 +410,40 @@ unsigned char **board_write(unsigned char **board, int x, int y, FILE *fp)
         while(1)
         {
                 fscanf(fp, "%d %d", &modx, &mody);
-                board[x + modx][y + mody] = 1;
+                board[y + mody][x + modx] = 1;
                 if (prevx == modx && prevy == mody){
                         break;
                 }
                 prevx = modx;
                 prevy = mody;
-                printf("%d, %d\n", modx, mody);
 
         }
         return board;
+}
+
+
+/**
+ * 
+ */
+unsigned char **five_board_write(unsigned char **board, int x, int y, FILE *fp)
+{       
+        char buff[255];
+        int mody, modx;
+        fscanf(fp, "%s", buff);
+        for(int i = 0; buff[0] != '#' && buff[1] != 'P'; i++){
+                fscanf(fp, "%s", buff);
+        }
+        fscanf(fp, "%d %d", &modx, &mody);
+        modx += x;
+        mody += y;
+        int j = 0;
+        while(buff[0] != '\0'){
+                fscanf(fp, "%s", buff);
+                for(int i = 0; i > strlen(buff); i++){
+                        if(buff[i] == '*'){
+                                board[modx + i][mody + j] = 1;
+                        }
+                }
+                j++;
+        }
 }
