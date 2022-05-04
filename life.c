@@ -10,9 +10,9 @@
  * 
  * @date 2022/05/03
  * 
- * @todo N/A
-
- * @bug Klien is currently broken and x,y are read in backwards.
+ * @todo .05 support
+ * 
+ * @bug Klien is currently broken
  */
 
 
@@ -86,23 +86,6 @@ unsigned char **arr_cpy(unsigned char  **a, unsigned char  **b, int width, int h
                 }
         }
         return b;
-}
-
-
-/**
- * Prints an array mainly used for debugging purposes.
- * @param arr the array being passed.
- * @param width the width of the array.
- * @param height the height of the array.
- */
-void **print_array(unsigned char  **arr, int width, int height)
-{
-        for (int i = 0; i < width; i++){
-                for (int j = 0; j < height; j++){
-                        printf("%d ", arr[i][j]);
-                }
-                printf("\n");
-        }
 }
 
 
@@ -317,34 +300,23 @@ int klien_neighbor(unsigned char  **arr, int width, int height, int x, int y)
         for(int xmod = -1; xmod <= 1; xmod++){
                 for(int ymod = -1; ymod <= 1; ymod++){
                         curx = xmod + x;
-                        cury = klybound(y + ymod, curx, width, height);
-                        curx = tsbound(curx, width);
-                        if(arr[tsbound(cury, height)][curx] == 1){
+                        cury = ymod + y;
+                        if (curx >= width){
+                                curx %= width;
+                                cury = height - cury;
+                        } else if (curx < 0){
+                                curx += width;
+                                cury = height - cury;
+                        }
+
+                        cury = tsbound(cury, height);
+                        if (arr[curx][cury] == 1){
                                 cont++;
                         }
-                        
                         
                 }
         }
         return cont;
-}
-
-
-/**
- * Messes with the klien bound for the y cord when it is
- * out of bounds for the x cord.
- * @param y the y cord.
- * @param x the x cord.
- * @param width the width of the array.
- * @param height the height of the array.
- * @return the new y bound.
- */
-int klybound(int y, int x, int width, int height)
-{
-        if (x >= width && x < 0){
-                return height - (y + 1);
-        }
-        return y;
 }
 
 
@@ -356,15 +328,15 @@ int klybound(int y, int x, int width, int height)
  */
 int sizecheck(int size)
 {
-        switch (size)
+        switch (size){
                 case 2:
                 case 4:
                 case 8:
                 case 16:
                         return size;
-                defualt:
+                default:
                         return 2;
-
+        }
 }
 
 
@@ -423,27 +395,45 @@ unsigned char **board_write(unsigned char **board, int x, int y, FILE *fp)
 
 
 /**
- * 
+ * Writes to a board in .05 file type.
+ * @param board the board to write to.
+ * @param x the x location we are starting from.
+ * @param y the y location we are starting from.
+ * @param fp the file we are reading from.
+ * @return the updated board that has been written to.
  */
 unsigned char **five_board_write(unsigned char **board, int x, int y, FILE *fp)
 {       
-        char buff[255];
-        int mody, modx;
-        fscanf(fp, "%s", buff);
-        for(int i = 0; buff[0] != '#' && buff[1] != 'P'; i++){
-                fscanf(fp, "%s", buff);
+        char cur, prev;
+        cur = '\0';
+        while(1){
+                prev = cur;
+                fscanf(fp, "%c", &cur);
+                if (cur == 'P' && prev == '#'){
+                        break;
+                }
         }
+        int modx, mody;
         fscanf(fp, "%d %d", &modx, &mody);
         modx += x;
         mody += y;
         int j = 0;
-        while(buff[0] != '\0'){
-                fscanf(fp, "%s", buff);
-                for(int i = 0; i > strlen(buff); i++){
-                        if(buff[i] == '*'){
-                                board[modx + i][mody + j] = 1;
-                        }
+        int i = 0;
+        while(cur != '\0'){
+                fscanf(fp, "%c", &cur);
+                if (cur == '*'){
+                        board[y + j][x + i] = 1;
+                } else if (cur == 10){
+                        j++;
+                        i = -1;
                 }
-                j++;
+                if (cur == prev && prev == 10){
+                        break;
+                }
+                i++;
+                prev = cur;
         }
+        return board;
 }
+
+

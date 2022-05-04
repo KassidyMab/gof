@@ -11,7 +11,7 @@
  * 
  * @date 2022/05/03
  * 
- * @todo -H.
+ * @todo multiple files/.05
 
  * @bug N/A
  */
@@ -36,14 +36,17 @@ int main(int argc, char *argv[])
 	int gtype = HEDGE;
 	int placement = RANDOM;
 	FILE *fp = NULL;
-	int xstart, ystart;
+	FILE *fpsix = NULL;
+	FILE *fpfive = NULL;
+	int xstart, ystart, xp, yp, xq, yq;
+	xstart = xp = xq = -1;
 	
 	if(argc == 1){
-		printf("usage: find [-n -l -a -w] -f filename -p pattern\n");
+		printf("No arguements provided use -H\n.");
 		exit(EXIT_FAILURE);
 	}
 
-	while((c = getopt(argc, argv, ":h:w:r:g:b:e:f:s:o:H")) != -1)
+	while((c = getopt(argc, argv, ":h:w:r:g:b:e:f:s:o:q:Q:p:P:H")) != -1)
 		switch(c) {
 		case 'w':
 			sscanf(optarg, "%d", &width);
@@ -53,7 +56,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'e':
 			gtype = game_type(optarg);
-			printf("%d", gtype);
 			break;
 		case 'r':
 			sscanf(optarg, "%hhu", &red);
@@ -81,9 +83,41 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 			break;
+		case 'P':
+			errno = 0; /* set to 0 so can process it if an error occurs */
+                        /* assume filename comes after -P */
+			/* optarg contains the argument for the option */
+			fpsix = fopen(optarg, "r");
+			
+			if (fpsix == NULL) {
+				/* strerror */
+				fprintf(stderr, 
+				"%s: argument to option '-f' failed: %s\n",
+				argv[0], strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			break;
+		case 'Q':
+			errno = 0; /* set to 0 so can process it if an error occurs */
+                        /* assume filename comes after -Q */
+			/* optarg contains the argument for the option */
+			fpfive = fopen(optarg, "r");
+			if (fpfive == NULL) {
+				/* strerror */
+				fprintf(stderr, 
+				"%s: argument to option '-f' failed: %s\n",
+				argv[0], strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			break;
 		case 'o':
-			placement = DEFINED;
 			sscanf(optarg, "%d,%d", &xstart, &ystart);
+			break;
+		case 'p':
+			sscanf(optarg, "%d,%d", &xp, &yp);
+			break;
+		case 'q':
+			sscanf(optarg, "%d,%d", &xq, &yq);
 			break;
 		case 'H':
 			printf("Help\n-----\n");
@@ -99,47 +133,57 @@ int main(int argc, char *argv[])
 			printf("-g changes the green rgb value\n");
 			printf("-H prints out the different inputs and what");
 			printf("they do\n");
+			printf("-p (x,y) changes grid P's inital placement\n");
+			printf("-P 1.06 file to write to grid\n");
+			printf("-q (x,y) changes grid Q's inital placement\n");
+			printf("-Q 1.05 file to write to grid\n");
 			printf("-----\n");
 			exit(0);
 			break;
 		default:
-			printf("-H for help\n");
-			printf("usage: find -w -h -e -f -s -o -r -b -g\n");
+			printf("Use -H for help\n");
+			printf("Usage: -w -h -e -f -s -o -r -b -g -p -P");
+			printf(" -q -Q\n");
 			break;
 				
 		}
 	
         /* set up SDL -- works with SDL2 */
 	init_sdl_info(&sdl_info, width, height, sprite_size, red, green, blue);
-	/* your life initialization code here */
+	//life initialization code here
 	int swidth = width/sprite_size;
 	int sheight = height/sprite_size;
 	unsigned char  **board = init_matrix(swidth, sheight);
 	unsigned char  **misc = init_matrix(swidth, sheight);
 	unsigned char **tswap;
-	if (placement != DEFINED){
+	if (xstart == -1){
 		xstart = (int)(swidth/2);
 		ystart = (int)(sheight/2);
+	}
+	if (xp == -1){
+		xp = (int)(swidth/2);
+		yp = (int)(sheight/2);
+	}
+	if (xq == -1){
+		xq = (int)(swidth/2);
+		yq = (int)(sheight/2);
 	}
 	if (fp != NULL){
 		board = board_write(board, xstart, ystart, fp);
 	}
+	if (fpfive != NULL){
+		board = five_board_write(board, xq, yq, fpfive);
+	}
+	if (fpsix != NULL){
+		board = board_write(board, xp, yp, fpsix);
+	}	
 
-	board[4][5] = 1;
-	board[5][5] = 1;
-	board[6][5] = 1;
-
-	board[20][5] = 1;
-	board[20][6] = 1;
-	board[20][7] = 1;
-        /* Main loop: loop forever. */
-	// x rows - current y pos.
+	//Loop for playing the game.
 	while (1)
 	{
 		sdl_render_life(&sdl_info, board);
-		/* your game of life code goes here  */	
-		if (SDL_GetTicks() % 600 == 0){
-			printf("%p %p\n", board, misc);
+		if (SDL_GetTicks() % 30 == 0){
+			// Swaps the boards location while iterating.
 			tswap = board;
 			if(gtype == HEDGE){
 				board = hedgelife(board, misc, swidth, sheight);
@@ -152,11 +196,7 @@ int main(int argc, char *argv[])
 		}
 		
 
-		/* change the  modulus value to slow the rendering */
-		// if (SDL_GetTicks() % 1 == 0)
-                 /* Poll for events, and handle the ones we care about. 
-                  * You can click the X button to close the window
-                  */
+
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) 
 		{
@@ -168,15 +208,18 @@ int main(int argc, char *argv[])
                         /* If escape is pressed, return (and thus, quit) */
 				if (event.key.keysym.sym == SDLK_ESCAPE){
 					del_arr(board, swidth);
+					del_arr(misc, swidth);
 					return 0;
 				}
 				break;
 			case SDL_QUIT:
 				del_arr(board, swidth);
+				del_arr(misc, swidth);
 				return(0);
 			}
 		}
 	}
-
+	del_arr(board, swidth);
+	del_arr(misc, swidth);
 	return 0;
 }

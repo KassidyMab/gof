@@ -44,6 +44,7 @@ int sizecheck(int size);
 unsigned char **randboard(unsigned char  **arr, int width, int height);
 int game_type(char *s);
 unsigned char **board_write(unsigned char **board, int x, int y, FILE *fp);
-
+unsigned char **five_board_write(unsigned char **board, int x, int y, FILE *fp);
+// unsigned char **fp_type(unsigned char **board, int x, int y, FILE *fp, char *s);
 
 #endif
